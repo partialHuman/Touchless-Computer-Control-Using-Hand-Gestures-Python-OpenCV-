@@ -60,7 +60,7 @@ The project leverages MediaPipe for hand tracking, OpenCV for video processing, 
 Install using:
 
 ```bash
-pip install opencv-python mediapipe pyautogui cvzone
+pip install -r requirements.txt
 ```
 
 ---
