@@ -1,154 +1,159 @@
 import time
+
 import cv2
 import pyautogui
 
+from src.config import (
+    KEYBOARD_ACTION_COOLDOWN,
+    KEYBOARD_CAMERA_HEIGHT,
+    KEYBOARD_CAMERA_WIDTH,
+)
 from src.hand_tracker import HandTracker
 
 
 class KeyboardController:
-    def __init__(
-        self,
-        camera_width=640,
-        camera_height=480,
-        detection_confidence=0.8,
-        cooldown=1.0,
-    ):
-        self.camera_width = camera_width
-        self.camera_height = camera_height
-        self.cooldown = cooldown
+    def __init__(self):
+        self.camera_width = KEYBOARD_CAMERA_WIDTH
+        self.camera_height = KEYBOARD_CAMERA_HEIGHT
+        self.action_cooldown = KEYBOARD_ACTION_COOLDOWN
+
+        self.hand_tracker = HandTracker()
+
         self.last_action_time = 0
 
-        self.cap = cv2.VideoCapture(0)
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, camera_width)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, camera_height)
+    def perform_action(self, hand_type, fingers):
+        """Perform an action based on hand type and gesture."""
 
-        self.hand_tracker = HandTracker(
-            max_hands=1,
-            detection_confidence=detection_confidence,
-        )
-
-    def can_perform_action(self):
-        """Prevent the same action from triggering repeatedly."""
         current_time = time.time()
 
-        if current_time - self.last_action_time >= self.cooldown:
-            self.last_action_time = current_time
-            return True
-
-        return False
-
-    def perform_action(self, fingers, hand_type):
-        """
-        Perform keyboard actions based on detected fingers.
-
-        fingers format:
-        [Thumb, Index, Middle, Ring, Pinky]
-
-        1 = finger up
-        0 = finger down
-        """
-
-        if not self.can_perform_action():
+        if (
+            current_time - self.last_action_time
+            < self.action_cooldown
+        ):
             return
 
-        # -----------------------------------------
-        # LEFT HAND CONTROLS
-        # -----------------------------------------
+        action_performed = False
+
+        # LEFT HAND
         if hand_type == "Left":
 
-            # Index + Middle -> Previous / Left arrow
+            # Index + Middle → Left Arrow
             if fingers == [0, 1, 1, 0, 0]:
                 pyautogui.press("left")
-                print("LEFT ARROW")
+                print("Left Arrow")
+                action_performed = True
 
-            # Thumb only -> Space
+            # Thumb → Space
             elif fingers == [1, 0, 0, 0, 0]:
                 pyautogui.press("space")
-                print("SPACE")
+                print("Space")
+                action_performed = True
 
-            # Index only -> Alt + Tab
+            # Index → Alt + Tab
             elif fingers == [0, 1, 0, 0, 0]:
                 pyautogui.hotkey("alt", "tab")
-                print("ALT + TAB")
+                print("Alt + Tab")
+                action_performed = True
 
-        # -----------------------------------------
-        # RIGHT HAND CONTROLS
-        # -----------------------------------------
+        # RIGHT HAND
         elif hand_type == "Right":
 
-            # Index + Middle -> Next / Right arrow
+            # Index + Middle → Right Arrow
             if fingers == [0, 1, 1, 0, 0]:
                 pyautogui.press("right")
-                print("RIGHT ARROW")
+                print("Right Arrow")
+                action_performed = True
 
-            # Thumb only -> Escape
+            # Thumb → Escape
             elif fingers == [1, 0, 0, 0, 0]:
                 pyautogui.press("esc")
-                print("ESC")
+                print("Escape")
+                action_performed = True
 
-            # Index only -> Refresh
+            # Index → F5
             elif fingers == [0, 1, 0, 0, 0]:
                 pyautogui.press("f5")
                 print("F5")
+                action_performed = True
+
+        if action_performed:
+            self.last_action_time = current_time
 
     def run(self):
-        """Start the virtual keyboard controller."""
+        """Run the gesture keyboard controller."""
 
-        if not self.cap.isOpened():
-            print("Error: Could not open camera.")
-            return
+        cap = cv2.VideoCapture(0)
 
-        print("Keyboard Controller started.")
-        print("Press 'q' or close the camera window to exit.")
+        cap.set(
+            cv2.CAP_PROP_FRAME_WIDTH,
+            self.camera_width,
+        )
 
-        try:
-            while True:
-                success, frame = self.cap.read()
+        cap.set(
+            cv2.CAP_PROP_FRAME_HEIGHT,
+            self.camera_height,
+        )
 
-                if not success:
-                    print("Error: Could not read camera frame.")
-                    break
+        window_name = "Gesture Keyboard"
 
-                frame = cv2.flip(frame, 1)
+        while True:
+            success, frame = cap.read()
 
-                hands = self.hand_tracker.find_hands(frame)
+            if not success:
+                print("Error: Unable to read from camera.")
+                break
 
-                for hand in hands:
-                    fingers = self.hand_tracker.fingers_up(hand)
+            # Mirror for natural interaction
+            frame = cv2.flip(frame, 1)
 
-                    # Hand type after the fixes we made
-                    hand_type = hand["type"]
+            hands = self.hand_tracker.find_hands(frame)
 
-                    self.perform_action(fingers, hand_type)
+            if hands:
+                hand = hands[0]
 
-                    cv2.putText(
-                        frame,
-                        f"{hand_type}: {fingers}",
-                        (20, 40),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.7,
-                        (0, 255, 0),
-                        2,
-                    )
+                hand_type = hand["type"]
 
-                cv2.imshow("Touchless Keyboard Controller", frame)
+                fingers = self.hand_tracker.fingers_up(
+                    hand
+                )
 
-                # Press q to exit
-                key = cv2.waitKey(1) & 0xFF
+                self.perform_action(
+                    hand_type,
+                    fingers,
+                )
 
-                if key == ord("q"):
-                    break
+                # Display detected hand and gesture
+                cv2.putText(
+                    frame,
+                    f"{hand_type}: {fingers}",
+                    (20, 40),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.8,
+                    (0, 255, 0),
+                    2,
+                )
 
-                # Exit when the window is closed
-                if cv2.getWindowProperty(
-                    "Touchless Keyboard Controller",
+            cv2.imshow(
+                window_name,
+                frame,
+            )
+
+            # Exit using Q
+            key = cv2.waitKey(1) & 0xFF
+
+            if key == ord("q"):
+                break
+
+            # Exit using window X button
+            if (
+                cv2.getWindowProperty(
+                    window_name,
                     cv2.WND_PROP_VISIBLE,
-                ) < 1:
-                    break
+                )
+                < 1
+            ):
+                break
 
-        finally:
-            self.cap.release()
-            cv2.destroyAllWindows()
-            self.hand_tracker.close()
-
-            print("Keyboard Controller stopped.")
+        cap.release()
+        cv2.destroyAllWindows()
+        self.hand_tracker.close()

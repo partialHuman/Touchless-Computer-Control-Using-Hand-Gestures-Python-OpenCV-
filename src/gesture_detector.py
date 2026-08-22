@@ -1,55 +1,86 @@
+from typing import List
+
+
 class GestureDetector:
-    @staticmethod
-    def get_corrected_handedness(detected_hand):
+    """
+    Utility class for hand orientation and finger-state detection.
+    """
+
+    FINGER_TIP_IDS = [4, 8, 12, 16, 20]
+    FINGER_PIP_IDS = [3, 6, 10, 14, 18]
+
+    def get_corrected_handedness(
+        self,
+        detected_hand: str,
+    ) -> str:
         """
-        Correct MediaPipe handedness because the camera frame
-        is mirrored horizontally.
+        Correct MediaPipe handedness for a horizontally
+        mirrored camera frame.
         """
+
         if detected_hand == "Left":
             return "Right"
 
-        return "Left"
+        if detected_hand == "Right":
+            return "Left"
 
-    @staticmethod
-    def get_fingers_up(landmarks, handedness):
+        return detected_hand
+
+    def get_fingers_up(
+        self,
+        landmarks,
+        hand_type: str,
+    ) -> List[int]:
         """
-        Returns finger states in this order:
+        Detect which fingers are raised.
 
-        [thumb, index, middle, ring, pinky]
+        Returns:
+            [thumb, index, middle, ring, pinky]
 
-        1 = finger extended
-        0 = finger folded
+        Each value is:
+            1 -> finger is up
+            0 -> finger is down
         """
 
         fingers = []
 
-        # -------------------------------
-        # Thumb
-        # -------------------------------
+        # -------------------------------------------------
+        # THUMB
+        # -------------------------------------------------
 
-        thumb_tip = landmarks[4]
-        thumb_ip = landmarks[3]
+        thumb_tip_x = landmarks[4].x
+        thumb_joint_x = landmarks[3].x
 
-        if handedness == "Right":
-            fingers.append(
-                1 if thumb_tip.x < thumb_ip.x else 0
+        if hand_type == "Right":
+            thumb_up = int(
+                thumb_tip_x < thumb_joint_x
             )
+
         else:
-            fingers.append(
-                1 if thumb_tip.x > thumb_ip.x else 0
+            thumb_up = int(
+                thumb_tip_x > thumb_joint_x
             )
 
-        # -------------------------------
-        # Index, Middle, Ring, Pinky
-        # -------------------------------
+        fingers.append(thumb_up)
 
-        finger_tips = [8, 12, 16, 20]
-        finger_pips = [6, 10, 14, 18]
+        # -------------------------------------------------
+        # INDEX, MIDDLE, RING, PINKY
+        # -------------------------------------------------
 
-        for tip_id, pip_id in zip(finger_tips, finger_pips):
-            if landmarks[tip_id].y < landmarks[pip_id].y:
-                fingers.append(1)
-            else:
-                fingers.append(0)
+        finger_pairs = [
+            (8, 6),    # Index
+            (12, 10),  # Middle
+            (16, 14),  # Ring
+            (20, 18),  # Pinky
+        ]
+
+        for tip_id, pip_id in finger_pairs:
+
+            finger_up = int(
+                landmarks[tip_id].y
+                < landmarks[pip_id].y
+            )
+
+            fingers.append(finger_up)
 
         return fingers
