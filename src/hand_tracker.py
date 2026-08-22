@@ -1,17 +1,24 @@
 import cv2
 import mediapipe as mp
 
+from src.config import (
+    HAND_DETECTION_CONFIDENCE,
+    HAND_LANDMARKER_MODEL,
+    HAND_PRESENCE_CONFIDENCE,
+    HAND_TRACKING_CONFIDENCE,
+    MAX_HANDS,
+)
 from src.gesture_detector import GestureDetector
 
 
 class HandTracker:
     def __init__(
         self,
-        model_path="models/hand_landmarker.task",
-        max_hands=1,
-        detection_confidence=0.5,
-        presence_confidence=0.5,
-        tracking_confidence=0.5,
+        model_path=HAND_LANDMARKER_MODEL,
+        max_hands=MAX_HANDS,
+        detection_confidence=HAND_DETECTION_CONFIDENCE,
+        presence_confidence=HAND_PRESENCE_CONFIDENCE,
+        tracking_confidence=HAND_TRACKING_CONFIDENCE,
     ):
         self.gesture_detector = GestureDetector()
 
@@ -36,29 +43,26 @@ class HandTracker:
 
     def find_hands(self, frame):
         """
-        Detect hands and return a simplified list.
+        Detect hands in an OpenCV frame.
 
-        Each hand contains:
-        - type: Left or Right
-        - landmarks: original MediaPipe landmarks
-        - lmList: pixel coordinates
+        Returns a list of dictionaries containing:
+        - type: Corrected Left/Right handedness
+        - landmarks: MediaPipe normalized landmarks
+        - lmList: Pixel coordinates
         """
 
         frame_height, frame_width, _ = frame.shape
 
-        # Convert OpenCV BGR frame to RGB
         rgb_frame = cv2.cvtColor(
             frame,
-            cv2.COLOR_BGR2RGB
+            cv2.COLOR_BGR2RGB,
         )
 
-        # Convert to MediaPipe image
         mp_image = mp.Image(
             image_format=mp.ImageFormat.SRGB,
-            data=rgb_frame
+            data=rgb_frame,
         )
 
-        # Detect hands
         result = self.detector.detect(mp_image)
 
         hands = []
@@ -70,19 +74,13 @@ class HandTracker:
             result.hand_landmarks,
             result.handedness,
         ):
+            detected_hand = handedness_data[0].category_name
 
-            # MediaPipe detected hand
-            detected_hand = (
-                handedness_data[0].category_name
-            )
-
-            # Correct hand because camera frame is mirrored
             hand_type = (
                 self.gesture_detector
                 .get_corrected_handedness(detected_hand)
             )
 
-            # Convert normalized landmarks to pixels
             lm_list = []
 
             for landmark in landmarks:
@@ -103,8 +101,9 @@ class HandTracker:
 
     def fingers_up(self, hand):
         """
-        Return finger states:
+        Return finger states.
 
+        Format:
         [thumb, index, middle, ring, pinky]
         """
 

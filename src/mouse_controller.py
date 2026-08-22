@@ -1,178 +1,126 @@
-import time
-
 import cv2
 import pyautogui
 
+from src.config import (
+    CLICK_DISTANCE_THRESHOLD,
+    MOUSE_CAMERA_HEIGHT,
+    MOUSE_CAMERA_WIDTH,
+    MOUSE_CLICK_COOLDOWN,
+)
 from src.hand_tracker import HandTracker
 
 
 class MouseController:
-    def __init__(
-        self,
-        camera_width=1280,
-        camera_height=720,
-        detection_confidence=0.8,
-        cooldown=0.8,
-    ):
-        self.camera_width = camera_width
-        self.camera_height = camera_height
-        self.cooldown = cooldown
-        self.last_click_time = 0
+    def __init__(self):
+        self.camera_width = MOUSE_CAMERA_WIDTH
+        self.camera_height = MOUSE_CAMERA_HEIGHT
 
-        # Camera setup
-        self.cap = cv2.VideoCapture(0)
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, camera_width)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, camera_height)
+        self.click_threshold = CLICK_DISTANCE_THRESHOLD
+        self.click_cooldown = MOUSE_CLICK_COOLDOWN
 
-        # Hand tracker
-        self.hand_tracker = HandTracker(
-            max_hands=1,
-            detection_confidence=detection_confidence,
-        )
+        self.hand_tracker = HandTracker()
 
-        # Screen size
         self.screen_width, self.screen_height = pyautogui.size()
 
-        # Store index finger position
-        self.index_x = 0
-        self.index_y = 0
-
-    def can_click(self):
-        """Prevent multiple clicks from one gesture."""
-        current_time = time.time()
-
-        if current_time - self.last_click_time >= self.cooldown:
-            self.last_click_time = current_time
-            return True
-
-        return False
-
-    def move_mouse(self, x, y, frame_width, frame_height):
-        """Convert camera coordinates to screen coordinates."""
-
-        screen_x = int(
-            x * self.screen_width / frame_width
-        )
-
-        screen_y = int(
-            y * self.screen_height / frame_height
-        )
-
-        pyautogui.moveTo(screen_x, screen_y)
-
-    def handle_hand(self, hand, frame):
-        """Handle mouse movement and clicking."""
-
-        frame_height, frame_width, _ = frame.shape
-
-        landmarks = hand["lmList"]
-
-        # -----------------------------------------
-        # INDEX FINGER → MOVE MOUSE
-        # -----------------------------------------
-        index_x, index_y = landmarks[8][0], landmarks[8][1]
-
-        self.index_x = index_x
-        self.index_y = index_y
-
-        self.move_mouse(
-            index_x,
-            index_y,
-            frame_width,
-            frame_height,
-        )
-
-        cv2.circle(
-            frame,
-            (index_x, index_y),
-            10,
-            (0, 255, 255),
-            cv2.FILLED,
-        )
-
-        # -----------------------------------------
-        # THUMB → CLICK DETECTION
-        # -----------------------------------------
-        thumb_x, thumb_y = landmarks[4][0], landmarks[4][1]
-
-        cv2.circle(
-            frame,
-            (thumb_x, thumb_y),
-            10,
-            (0, 255, 255),
-            cv2.FILLED,
-        )
-
-        # Distance between thumb and index finger
-        distance = abs(self.index_y - thumb_y)
-
-        # Click when thumb and index are close vertically
-        if distance < 20 and self.can_click():
-
-            pyautogui.click()
-
-            print("CLICK")
-
-            # Visual feedback
-            cv2.putText(
-                frame,
-                "CLICK",
-                (50, 80),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1,
-                (0, 255, 0),
-                3,
-            )
-
     def run(self):
-        """Start the virtual mouse controller."""
+        """Run the virtual mouse controller."""
 
-        if not self.cap.isOpened():
-            print("Error: Could not open camera.")
-            return
+        cap = cv2.VideoCapture(0)
 
-        print("Mouse Controller started.")
-        print("Press 'q' or close the camera window to exit.")
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.camera_width)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.camera_height)
 
-        try:
-            while True:
-                success, frame = self.cap.read()
+        last_click_time = 0
 
-                if not success:
-                    print("Error: Could not read camera frame.")
-                    break
+        while True:
+            success, frame = cap.read()
 
-                # Mirror the camera
-                frame = cv2.flip(frame, 1)
+            if not success:
+                print("Error: Unable to read from camera.")
+                break
 
-                # Detect hands
-                hands = self.hand_tracker.find_hands(frame)
+            # Mirror the camera for natural interaction
+            frame = cv2.flip(frame, 1)
 
-                for hand in hands:
-                    self.handle_hand(hand, frame)
+            frame_height, frame_width, _ = frame.shape
 
-                # Show camera feed
-                cv2.imshow(
-                    "Touchless Mouse Controller",
+            hands = self.hand_tracker.find_hands(frame)
+
+            if hands:
+                hand = hands[0]
+                landmarks = hand["lmList"]
+
+                # Index fingertip
+                index_x = landmarks[8][0]
+                index_y = landmarks[8][1]
+
+                # Thumb fingertip
+                thumb_x = landmarks[4][0]
+                thumb_y = landmarks[4][1]
+
+                # Draw fingertip indicators
+                cv2.circle(
                     frame,
+                    (index_x, index_y),
+                    10,
+                    (0, 255, 255),
+                    -1,
                 )
 
-                # Press q to exit
-                key = cv2.waitKey(1) & 0xFF
+                cv2.circle(
+                    frame,
+                    (thumb_x, thumb_y),
+                    10,
+                    (0, 255, 255),
+                    -1,
+                )
 
-                if key == ord("q"):
-                    break
+                # Map camera coordinates to screen coordinates
+                screen_x = (
+                    index_x / frame_width
+                ) * self.screen_width
 
-                # Exit when X button is clicked
-                if cv2.getWindowProperty(
-                    "Touchless Mouse Controller",
+                screen_y = (
+                    index_y / frame_height
+                ) * self.screen_height
+
+                pyautogui.moveTo(screen_x, screen_y)
+
+                # Calculate vertical distance for click gesture
+                distance = abs(index_y - thumb_y)
+
+                current_time = cv2.getTickCount() / cv2.getTickFrequency()
+
+                # Click when thumb and index finger are close
+                if (
+                    distance < self.click_threshold
+                    and current_time - last_click_time
+                    > self.click_cooldown
+                ):
+                    pyautogui.click()
+
+                    last_click_time = current_time
+
+                    print("Click")
+
+            cv2.imshow("Virtual Mouse", frame)
+
+            # Exit using Q
+            key = cv2.waitKey(1) & 0xFF
+
+            if key == ord("q"):
+                break
+
+            # Exit if window is closed
+            if (
+                cv2.getWindowProperty(
+                    "Virtual Mouse",
                     cv2.WND_PROP_VISIBLE,
-                ) < 1:
-                    break
+                )
+                < 1
+            ):
+                break
 
-        finally:
-            self.cap.release()
-            cv2.destroyAllWindows()
-            self.hand_tracker.close()
-
-            print("Mouse Controller stopped.")
+        cap.release()
+        cv2.destroyAllWindows()
+        self.hand_tracker.close()

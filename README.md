@@ -1,63 +1,102 @@
-# Touchless-Computer-Control-Using-Hand-Gestures-Python-OpenCV-
+# Touchless Computer Control Using Hand Gestures
 
+Control your computer using hand gestures through a webcam. This project uses **Python, OpenCV, and MediaPipe Hand Landmarker** to detect hand landmarks and translate gestures into mouse movements, clicks, keyboard shortcuts, and navigation controls.
 
-## 📌 Overview
-This project implements a real-time hand gesture recognition system using computer vision techniques to control mouse and keyboard operations without physical input devices.
+## Features
 
-Using a webcam, the system detects hand landmarks and interprets gestures to perform actions such as cursor movement, clicking, window switching, and keyboard shortcuts.
-
-The project leverages MediaPipe for hand tracking, OpenCV for video processing, and PyAutoGUI for system automation.
-
----
-
-## 🎯 Features
-
-- Real-time hand detection and tracking  
-- Virtual mouse movement using finger position  
-- Mouse click using finger pinch gesture  
-- Keyboard control using predefined hand gestures  
-- No external hardware required (webcam only)  
-
----
-
-## ⚙️ Technologies Used
-
-- Python  
-- OpenCV  
-- MediaPipe  
-- PyAutoGUI  
-- CVZone Hand Tracking Module  
- 
+- 🖱️ Virtual mouse control using hand tracking
+- 👆 Index-finger-based cursor movement
+- 🤏 Thumb + index gesture for mouse clicking
+- ⌨️ Gesture-based keyboard controls
+- ↔️ Left and right navigation gestures
+- 🔄 Application switching using gestures
+- ✋ Left and right hand detection
+- 🎥 Real-time webcam processing
+- 🧩 Modular project architecture
+- ⚙️ Centralized configuration
+- 🧪 Unit tests for gesture detection
+- ❌ Clean camera shutdown using `Q` or the window close button
 
 ---
 
-## ⌨️ Supported Gestures – Keyboard Control  
+## Project Structure
 
-| Hand Used | Finger Pattern (Thumb → Pinky) | Action Performed |
-|----------|-------------------------------|-----------------|
-| Left Hand | 0 1 1 0 0 | Move Left Arrow |
-| Left Hand | 1 0 0 0 0 | Space Bar |
-| Left Hand | 0 1 0 0 0 | Alt + Tab |
-| Right Hand | 0 1 1 0 0 | Move Right Arrow |
-| Right Hand | 1 0 0 0 0 | Escape (Esc) |
-| Right Hand | 0 1 0 0 0 | Refresh (F5) |
-
-> Finger Pattern Format: [Thumb, Index, Middle, Ring, Pinky]
-
-## 🖱️ Supported Gestures – Virtual Mouse  
-
-| Gesture | Description | Action |
-|--------|------------|-------|
-| Index Finger Movement | Move index finger across screen | Cursor movement |
-| Index + Thumb Close | Pinch gesture | Mouse click |
-| Hand Tracking | Continuous landmark detection | Smooth pointer control |
-
+```text
+Touchless-Computer-Control-Using-Hand-Gestures-Python-OpenCV/
+│
+├── models/
+│   └── hand_landmarker.task
+│
+├── src/
+│   ├── __init__.py
+│   ├── config.py
+│   ├── gesture_detector.py
+│   ├── hand_tracker.py
+│   ├── keyboard_controller.py
+│   └── mouse_controller.py
+│
+├── tests/
+│   └── test_gesture_detector.py
+│
+├── .gitignore
+├── main.py
+├── README.md
+├── report.pdf
+└── requirements.txt
+```
 
 ---
 
-## 📦 Required Libraries
+## Requirements
 
-Install using:
+- Python 3.11 or compatible version
+- Webcam
+- Windows, Linux, or macOS
+
+The main dependencies are:
+
+- OpenCV
+- MediaPipe
+- PyAutoGUI
+- Pytest
+
+---
+
+## Installation
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/partialHuman/Touchless-Computer-Control-Using-Hand-Gestures-Python-OpenCV-.git
+```
+
+### 2. Move into the project directory
+
+```bash
+cd Touchless-Computer-Control-Using-Hand-Gestures-Python-OpenCV-
+```
+
+### 3. Create a virtual environment
+
+```bash
+python -m venv .venv
+```
+
+### 4. Activate the virtual environment
+
+#### Windows PowerShell
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+#### Windows Command Prompt
+
+```cmd
+.venv\Scripts\activate
+```
+
+### 5. Install dependencies
 
 ```bash
 pip install -r requirements.txt
@@ -65,106 +104,189 @@ pip install -r requirements.txt
 
 ---
 
-## ▶ How to Run
+## Usage
 
-### Virtual Mouse:
+Run the main application:
+
 ```bash
-python mouse.py
+python main.py
 ```
 
-### Keyboard Control:
+You will see:
+
+```text
+=============================================
+     TOUCHLESS COMPUTER CONTROL
+=============================================
+1. Virtual Mouse
+2. Gesture Keyboard
+3. Exit
+=============================================
+```
+
+Select the desired option.
+
+---
+
+# 🖱️ Virtual Mouse
+
+The virtual mouse uses your index finger to control the system cursor.
+
+### Controls
+
+| Gesture | Action |
+|---|---|
+| ☝️ Index finger movement | Move cursor |
+| 🤏 Thumb + Index close together | Mouse click |
+| `Q` | Exit Virtual Mouse |
+| Close window | Exit Virtual Mouse |
+
+---
+
+# ⌨️ Gesture Keyboard
+
+The keyboard controller detects the hand and finger positions and performs predefined keyboard actions.
+
+## Left Hand
+
+| Gesture | Action |
+|---|---|
+| ☝️ Index + Middle | Left Arrow |
+| 👍 Thumb | Space |
+| ☝️ Index | Alt + Tab |
+
+## Right Hand
+
+| Gesture | Action |
+|---|---|
+| ☝️ Index + Middle | Right Arrow |
+| 👍 Thumb | Escape |
+| ☝️ Index | F5 |
+
+---
+
+## Architecture
+
+The project separates hand tracking, gesture detection, and system control.
+
+```mermaid
+flowchart TD
+    A["main.py"]
+
+    subgraph Controllers["Controllers"]
+        B["🖱️ MouseController"]
+        C["⌨️ KeyboardController"]
+    end
+
+    subgraph HandProcessing["Hand Processing"]
+        D["✋ HandTracker"]
+        E["🖐️ GestureDetector"]
+    end
+
+    F["⚙️ config.py"]
+
+    A --> B
+    A --> C
+
+    B --> D
+    C --> D
+
+    D --> E
+
+    F -. Settings .-> B
+    F -. Settings .-> C
+    F -. Settings .-> D
+```
+
+---
+
+## Configuration
+
+Application settings are centralized in:
+
+```text
+src/config.py
+```
+
+This includes:
+
+- Camera resolution
+- Hand detection confidence
+- Hand tracking confidence
+- Maximum number of hands
+- Mouse click threshold
+- Mouse click cooldown
+- Keyboard action cooldown
+- MediaPipe model path
+
+This makes the application easier to configure without modifying the controller logic.
+
+---
+
+## Testing
+
+Run the test suite using:
+
 ```bash
-python HandGesture-Keyboard.py
+python -m pytest -v
 ```
+
+The current tests verify:
+
+- Left/right handedness correction
+- Right-hand thumb detection
+- Left-hand thumb detection
+- Thumb-up and thumb-down states
+- Index finger detection
+- Index + middle finger detection
+- All-fingers-up detection
 
 ---
 
-## 🎛️ How to Customize Gestures  
+## Technologies Used
 
-You can easily modify or add new gestures by editing the finger pattern conditions in the Python scripts.
-
----
-
-### ✋ For Keyboard Gestures (`HandGesture-Keyboard.py`)
-
-Each gesture is detected using this pattern:
-
-```python
-fingers = detector.fingersUp(hand)
-```
-
-Example:
-
-```python
-if fingers == [0, 1, 1, 0, 0]:
-    pyautogui.press("left")
-```
-
-#### ➕ To add a new gesture:
-
-1. Print finger values:
-```python
-print(fingers)
-```
-
-2. Show a hand gesture and note the pattern
-
-3. Add new condition:
-
-```python
-if fingers == [1, 1, 1, 0, 0]:
-    pyautogui.press("volumeup")
-```
+| Technology | Purpose |
+|---|---|
+| Python | Core application |
+| OpenCV | Webcam capture and display |
+| MediaPipe | Hand landmark detection |
+| PyAutoGUI | Mouse and keyboard control |
+| Pytest | Unit testing |
 
 ---
 
-### 🖱️ For Virtual Mouse (`mouse.py`)
+## Future Improvements
 
-Mouse actions are controlled by finger distance:
-
-```python
-if abs(index_y - thumb_y) < 20:
-    pyautogui.click()
-```
-
-#### ➕ To change click sensitivity:
-
-```python
-if abs(index_y - thumb_y) < 40:   # more sensitive
-```
-
-or
-
-```python
-if abs(index_y - thumb_y) < 10:   # less sensitive
-```
+- [ ] Add gesture smoothing for cursor movement
+- [ ] Add configurable gesture mappings
+- [ ] Add a GUI for selecting modes
+- [ ] Support multiple hands
+- [ ] Add gesture customization
+- [ ] Add double-click and drag gestures
+- [ ] Add volume and media controls
+- [ ] Add screenshots and demo GIFs
+- [ ] Improve test coverage
 
 ---
 
-### 🎯 Tips for Better Accuracy
+## Exit Controls
 
-- Ensure good lighting  
-- Keep hand inside camera frame  
-- Avoid cluttered backgrounds  
-- Use consistent hand gestures  
+Both controllers can be closed using:
 
+```text
+Q
+```
 
-## 📈 Results
-
-- Smooth real-time gesture tracking  
-- Accurate hand landmark detection  
-- Reliable system automation  
-- Hands-free computer control  
+or by clicking the camera window's **X** button.
 
 ---
 
+## License
 
+This project is available for educational and personal use.
 
-## 🚀 Future Improvements
+---
 
-- Gesture customization  
-- Multi-hand support  
-- AI-based gesture classification  
-- Mobile camera integration  
-- Performance optimization  
+## Author
 
+Developed and improved as part of a project focused on **computer vision, hand gesture recognition, and touchless human-computer interaction**.
