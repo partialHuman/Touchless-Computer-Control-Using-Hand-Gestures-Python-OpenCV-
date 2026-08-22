@@ -1,4 +1,5 @@
 mediapipe>=1.0.1
 opencv-python>=4.10.0
 pyautogui>=0.9.54
-cvzone
+cvzone>=2.0.0
+pytest>=9.1.1
