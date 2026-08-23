@@ -1,68 +1,57 @@
 # Touchless Computer Control Using Hand Gestures
 
-Control your computer using hand gestures through a webcam. This project uses **Python, OpenCV, and MediaPipe Hand Landmarker** to detect hand landmarks and translate gestures into mouse movements, clicks, keyboard shortcuts, and navigation controls.
+[![Python](https://img.shields.io/badge/Python-3.11%2B-blue?logo=python&logoColor=white)](https://www.python.org/)
+[![OpenCV](https://img.shields.io/badge/OpenCV-Computer%20Vision-green?logo=opencv&logoColor=white)](https://opencv.org/)
+[![MediaPipe](https://img.shields.io/badge/MediaPipe-Hand%20Tracking-orange)](https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker)
+[![PyAutoGUI](https://img.shields.io/badge/PyAutoGUI-Automation-blueviolet)](https://pyautogui.readthedocs.io/)
+[![Pytest](https://img.shields.io/badge/Tested%20with-pytest-blue?logo=pytest&logoColor=white)](https://pytest.org/)
+[![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white)](https://www.microsoft.com/windows)
+![Status](https://img.shields.io/badge/Status-Active-success)
+[![License](https://img.shields.io/badge/License-Educational%20%26%20Experimental-lightgrey)](#license)
 
-## Features
+Control your computer using hand gestures with **Python, OpenCV, MediaPipe, and PyAutoGUI**.
 
-- 🖱️ Virtual mouse control using hand tracking
-- 👆 Index-finger-based cursor movement
-- 🤏 Thumb + index gesture for mouse clicking
-- ⌨️ Gesture-based keyboard controls
-- ↔️ Left and right navigation gestures
-- 🔄 Application switching using gestures
-- ✋ Left and right hand detection
-- 🎥 Real-time webcam processing
-- 🧩 Modular project architecture
-- ⚙️ Centralized configuration
-- 🧪 Unit tests for gesture detection
-- ❌ Clean camera shutdown using `Q` or the window close button
+The project provides two touchless interaction modes:
 
----
-
-## Project Structure
-
-```text
-Touchless-Computer-Control-Using-Hand-Gestures-Python-OpenCV/
-│
-├── models/
-│   └── hand_landmarker.task
-│
-├── src/
-│   ├── __init__.py
-│   ├── config.py
-│   ├── gesture_detector.py
-│   ├── hand_tracker.py
-│   ├── keyboard_controller.py
-│   └── mouse_controller.py
-│
-├── tests/
-│   └── test_gesture_detector.py
-│
-├── .gitignore
-├── main.py
-├── README.md
-├── report.pdf
-└── requirements.txt
-```
+- 🖱️ **Virtual Mouse** — Control the cursor, click, and drag using hand gestures.
+- ⌨️ **Gesture Keyboard** — Trigger keyboard actions and shortcuts using configurable hand gestures.
 
 ---
 
-## Requirements
+# Features
 
-- Python 3.11 or compatible version
-- Webcam
-- Windows, Linux, or macOS
+### 🖱️ Virtual Mouse
 
-The main dependencies are:
+- Index finger cursor control
+- Cursor smoothing
+- Thumb + Index pinch for left click
+- Index + Middle gesture for drag
+- Click cooldown protection
+- Automatic drag release when the gesture changes or the hand disappears
 
-- OpenCV
-- MediaPipe
-- PyAutoGUI
-- Pytest
+### ⌨️ Gesture Keyboard
+
+- Left and right hand detection
+- Finger-state-based gesture recognition
+- Configurable gesture-to-action mappings
+- Single-key actions
+- Multi-key shortcuts
+- Keyboard action cooldown
+- User-friendly gesture and action status display
+- Multiple keyboard profiles
+
+### ⚙️ Project Design
+
+- Modular architecture
+- Shared hand tracking pipeline
+- Centralized configuration
+- Separate keyboard action executor
+- Automated gesture detector tests
+- Manual testing documentation
 
 ---
 
-## Installation
+## Quick Start
 
 ### 1. Clone the repository
 
@@ -84,16 +73,8 @@ python -m venv .venv
 
 ### 4. Activate the virtual environment
 
-#### Windows PowerShell
-
-```powershell
+```bash
 .venv\Scripts\Activate.ps1
-```
-
-#### Windows Command Prompt
-
-```cmd
-.venv\Scripts\activate
 ```
 
 ### 5. Install dependencies
@@ -101,6 +82,12 @@ python -m venv .venv
 ```bash
 pip install -r requirements.txt
 ```
+
+### 6. Run the application
+```bash
+python main.py
+```
+For complete setup instructions, see the [Installation Guide](/docs/installation.md).
 
 ---
 
@@ -128,7 +115,7 @@ Select the desired option.
 
 ---
 
-# 🖱️ Virtual Mouse
+## 🖱️ Virtual Mouse
 
 The virtual mouse uses your index finger to control the system cursor.
 
@@ -143,83 +130,101 @@ The virtual mouse uses your index finger to control the system cursor.
 
 ---
 
-# ⌨️ Gesture Keyboard
+## ⌨️ Gesture Keyboard
 
 The keyboard controller detects the hand and finger positions and performs predefined keyboard actions.
 
-## Left Hand
+### Left Hand
 
 | Gesture | Action |
 |---|---|
-| ☝️ Index + Middle | Left Arrow |
-| 👍 Thumb | Space |
-| ☝️ Index | Alt + Tab |
+| Index + Middle | Left Arrow |
+| Thumb | Space |
+| Index | Alt + Tab |
 
-## Right Hand
+### Right Hand
 
 | Gesture | Action |
 |---|---|
-| ☝️ Index + Middle | Right Arrow |
-| 👍 Thumb | Escape |
-| ☝️ Index | F5 |
+| Index + Middle | Right Arrow |
+| Thumb | Escape |
+| Index | F5 |
+
+For all profiles and gesture details, see the Gesture [Controls Guide](/docs/controls.md).
 
 ---
 
-## Architecture
+# Architecture
 
 The project separates hand tracking, gesture detection, and system control.
 
 ```mermaid
-flowchart TD
-    A["main.py"]
+flowchart LR
+    A[Webcam] --> B[OpenCV]
+    B --> C[HandTracker]
+    C --> D[MediaPipe Hand Landmarker]
+    D --> E[GestureDetector]
 
-    subgraph Controllers["Controllers"]
-        B["🖱️ MouseController"]
-        C["⌨️ KeyboardController"]
-    end
+    E --> F{Mode}
 
-    subgraph HandProcessing["Hand Processing"]
-        D["✋ HandTracker"]
-        E["🖐️ GestureDetector"]
-    end
+    F -->|Virtual Mouse| G[MouseController]
+    F -->|Gesture Keyboard| H[KeyboardController]
 
-    F["⚙️ config.py"]
+    G --> I[PyAutoGUI Mouse Control]
 
-    A --> B
-    A --> C
-
-    B --> D
-    C --> D
-
-    D --> E
-
-    F -. Settings .-> B
-    F -. Settings .-> C
-    F -. Settings .-> D
+    H --> J[KeyboardActionExecutor]
+    J --> K[PyAutoGUI Keyboard Control]
 ```
 
 ---
 
-## Configuration
-
-Application settings are centralized in:
-
+# Project Structure
 ```text
-src/config.py
+Touchless-Computer-Control-Using-Hand-Gestures-Python-OpenCV-
+│
+├── docs/
+│   ├── architecture.md
+│   ├── controls.md
+│   ├── future-work.md
+│   ├── installation.md
+│   ├── report.pdf
+│   ├── testing.md
+│   └── usage.md
+│
+├── models/
+│   └── hand_landmarker.task
+│
+├── src/
+│   ├── __init__.py
+│   ├── config.py
+│   ├── gesture_detector.py
+│   ├── hand_tracker.py
+│   ├── keyboard_actions.py
+│   ├── keyboard_controller.py
+│   └── mouse_controller.py
+│
+├── tests/
+│   └── test_gesture_detector.py
+│
+├── .gitignore
+├── main.py
+├── README.md
+├── report.pdf
+└── requirements.txt
 ```
 
-This includes:
+# Documentation
 
-- Camera resolution
-- Hand detection confidence
-- Hand tracking confidence
-- Maximum number of hands
-- Mouse click threshold
-- Mouse click cooldown
-- Keyboard action cooldown
-- MediaPipe model path
-
-This makes the application easier to configure without modifying the controller logic.
+Detailed documentation is available in the [docs/](/docs/) directory.
+| Document                                     | Description                                   |
+| -------------------------------------------- | --------------------------------------------- |
+| [Installation Guide](docs/installation.md)   | Environment setup and dependency installation |
+| [Usage Guide](docs/usage.md)                 | Running and using the application             |
+| [Gesture Controls](docs/controls.md)         | Complete mouse and keyboard gesture reference |
+| [Project Architecture](docs/architecture.md) | System design, modules, and workflow diagrams |
+| [Testing Guide](docs/testing.md)             | Automated and manual testing procedures       |
+| [Future Work](docs/future-work.md)           | Planned improvements and project roadmap      |
+| [Project Report](docs/report.pdf) | Detailed project report |
 
 ---
 
@@ -228,18 +233,9 @@ This makes the application easier to configure without modifying the controller 
 Run the test suite using:
 
 ```bash
-python -m pytest -v
+pytest -v
 ```
-
-The current tests verify:
-
-- Left/right handedness correction
-- Right-hand thumb detection
-- Left-hand thumb detection
-- Thumb-up and thumb-down states
-- Index finger detection
-- Index + middle finger detection
-- All-fingers-up detection
+See the [Testing Guide](/docs/testing.md) for the complete testing checklist and procedures.
 
 ---
 
@@ -257,36 +253,30 @@ The current tests verify:
 
 ## Future Improvements
 
-- [ ] Add gesture smoothing for cursor movement
-- [ ] Add configurable gesture mappings
-- [ ] Add a GUI for selecting modes
-- [ ] Support multiple hands
-- [ ] Add gesture customization
-- [ ] Add double-click and drag gestures
-- [ ] Add volume and media controls
-- [ ] Add screenshots and demo GIFs
-- [ ] Improve test coverage
+- Double-click and right-click gestures
+- Scroll control
+- Adaptive cursor smoothing
+- Camera selection
+- Additional keyboard profiles
+- Custom gesture mappings
+- Debug modes
+- Automated integration testing
+- GitHub Actions CI
+- GUI-based configuration
+- Application packaging
 
----
-
-## Exit Controls
-
-Both controllers can be closed using:
-
-```text
-Q
-```
-
-or by clicking the camera window's **X** button.
+See [Future Work](/docs/future-work.md) for the complete roadmap.
 
 ---
 
 ## License
 
-This project is available for educational and personal use.
+This project is licensed under the MIT License.
 
 ---
 
-## Author
+## Disclaimer
 
-Developed and improved as part of a project focused on **computer vision, hand gesture recognition, and touchless human-computer interaction**.
+This project is currently intended for educational and experimental use.
+
+---
