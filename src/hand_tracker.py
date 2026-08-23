@@ -79,8 +79,9 @@ class HandTracker:
             )
 
             # Correct handedness because the frame is mirrored
-            hand_type = self.get_corrected_handedness(
-                detected_hand
+            hand_type = (
+                self.gesture_detector
+                .get_corrected_handedness(detected_hand)
             )
 
             lm_list = []
@@ -100,20 +101,6 @@ class HandTracker:
             )
 
         return hands
-
-    def get_corrected_handedness(self, handedness):
-        """
-        Correct left/right hand labeling because the
-        camera frame is mirrored.
-        """
-
-        if handedness == "Left":
-            return "Right"
-
-        if handedness == "Right":
-            return "Left"
-
-        return handedness
 
     def fingers_up(self, hand):
         """

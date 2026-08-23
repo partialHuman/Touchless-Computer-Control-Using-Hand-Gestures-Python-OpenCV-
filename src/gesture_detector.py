@@ -16,6 +16,20 @@ class GestureDetector:
         self.current_gesture = None
         self.previous_gesture = None
 
+    def get_corrected_handedness(self, handedness):
+        """
+        Correct left/right hand labeling because the
+        camera frame is mirrored.
+        """
+
+        if handedness == "Left":
+            return "Right"
+
+        if handedness == "Right":
+            return "Left"
+
+        return handedness
+
     def get_fingers_up(
         self,
         landmarks,
