@@ -7,7 +7,9 @@
 [![Pytest](https://img.shields.io/badge/Tested%20with-pytest-blue?logo=pytest&logoColor=white)](https://pytest.org/)
 [![Platform](https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white)](https://www.microsoft.com/windows)
 ![Status](https://img.shields.io/badge/Status-Active-success)
-[![License](https://img.shields.io/badge/License-Educational%20%26%20Experimental-lightgrey)](#license)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+![CI](https://github.com/partialHuman/Touchless-Computer-Control-Using-Hand-Gestures-Python-OpenCV-/actions/workflows/tests.yml/badge.svg)
+
 
 Control your computer using hand gestures with **Python, OpenCV, MediaPipe, and PyAutoGUI**.
 
