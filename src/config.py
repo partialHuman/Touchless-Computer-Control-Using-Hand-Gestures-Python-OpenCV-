@@ -3,6 +3,12 @@ Application configuration constants.
 """
 
 # ---------------------------------------------------------
+# MODEL
+# ---------------------------------------------------------
+
+HAND_LANDMARKER_MODEL = "models/hand_landmarker.task"
+
+# ---------------------------------------------------------
 # CAMERA SETTINGS
 # ---------------------------------------------------------
 
@@ -72,7 +78,72 @@ MOUSE_ACTIVE_REGION_MARGIN = 100
 DRAG_ENABLED = True
 
 # ---------------------------------------------------------
-# MODEL
+# KEYBOARD GESTURES
 # ---------------------------------------------------------
 
-HAND_LANDMARKER_MODEL = "models/hand_landmarker.task"
+KEYBOARD_GESTURES = {
+    "left_right": [0, 1, 1, 0, 0],
+    "thumb": [1, 0, 0, 0, 0],
+    "index": [0, 1, 0, 0, 0],
+}
+
+# ---------------------------------------------------------
+# KEYBOARD DISPLAY LABELS
+# ---------------------------------------------------------
+
+KEYBOARD_GESTURE_LABELS = {
+    "left_right": "Index + Middle",
+    "thumb": "Thumb",
+    "index": "Index Finger",
+    "unknown": "Unknown",
+}
+
+
+KEYBOARD_ACTION_LABELS = {
+    "left": "Left Arrow",
+    "right": "Right Arrow",
+    "space": "Space",
+    "esc": "Escape",
+    "f5": "Refresh (F5)",
+    "alt+tab": "Alt + Tab",
+}
+
+# ---------------------------------------------------------
+# KEYBOARD CONTROL PROFILE
+# ---------------------------------------------------------
+
+KEYBOARD_PROFILE = "presentation"
+
+
+KEYBOARD_PROFILES = {
+
+    "default": {
+        "Left": {
+            "left_right": "left",
+            "thumb": "space",
+            "index": "alt+tab",
+        },
+
+        "Right": {
+            "left_right": "right",
+            "thumb": "esc",
+            "index": "f5",
+        },
+    },
+
+    "presentation": {
+        "Left": {
+            "left_right": "left",
+            "thumb": "space",
+            "index": "esc",
+        },
+
+        "Right": {
+            "left_right": "right",
+            "thumb": "space",
+            "index": "f5",
+        },
+    },
+
+}
+

@@ -1,83 +1,155 @@
 import time
 
 import cv2
-import pyautogui
 
 from src.config import (
     KEYBOARD_ACTION_COOLDOWN,
+    KEYBOARD_ACTION_LABELS,
     KEYBOARD_CAMERA_HEIGHT,
     KEYBOARD_CAMERA_WIDTH,
+    KEYBOARD_GESTURE_LABELS,
+    KEYBOARD_GESTURES,
+    KEYBOARD_PROFILE,
+    KEYBOARD_PROFILES,
 )
-from src.hand_tracker import HandTracker
 
+from src.hand_tracker import HandTracker
+from src.keyboard_actions import KeyboardActionExecutor
 
 class KeyboardController:
     def __init__(self):
         self.camera_width = KEYBOARD_CAMERA_WIDTH
         self.camera_height = KEYBOARD_CAMERA_HEIGHT
-        self.action_cooldown = KEYBOARD_ACTION_COOLDOWN
+
+        self.action_cooldown = (
+            KEYBOARD_ACTION_COOLDOWN
+        )
 
         self.hand_tracker = HandTracker()
+        self.action_executor = KeyboardActionExecutor()
+
+        self.profile_name = KEYBOARD_PROFILE
+
+        self.profile = KEYBOARD_PROFILES.get(
+            self.profile_name,
+            KEYBOARD_PROFILES["default"],
+        )
 
         self.last_action_time = 0
 
-    def perform_action(self, hand_type, fingers):
-        """Perform an action based on hand type and gesture."""
+        self.current_gesture = None
+        self.previous_gesture = None
+
+    def get_gesture_name(self, fingers):
+        """
+        Convert a finger pattern into
+        a configured keyboard gesture.
+        """
+
+        for gesture_name, pattern in (
+            KEYBOARD_GESTURES.items()
+        ):
+            if fingers == pattern:
+                return gesture_name
+
+        return "unknown"
+
+    def get_action(
+        self,
+        hand_type,
+        gesture,
+    ):
+        """
+        Get the action from the active
+        keyboard control profile.
+        """
+
+        return self.profile.get(
+            hand_type,
+            {},
+        ).get(
+            gesture,
+            None,
+        )
+
+    def get_gesture_label(self, gesture):
+        """Return a user-friendly gesture name."""
+
+        return KEYBOARD_GESTURE_LABELS.get(
+            gesture,
+            "Unknown",
+        )
+
+
+    def get_action_label(self, action):
+        """Return a user-friendly action name."""
+
+        return KEYBOARD_ACTION_LABELS.get(
+            action,
+            "None",
+        )
+
+    def is_new_gesture(self, gesture):
+        """
+        Return True only when the gesture
+        changes from the previous gesture.
+        """
+
+        self.previous_gesture = self.current_gesture
+        self.current_gesture = gesture
+
+        return (
+            self.current_gesture
+            != self.previous_gesture
+        )
+
+    def perform_action(
+        self,
+        hand_type,
+        fingers,
+    ):
+        """
+        Detect a new gesture and perform
+        the configured keyboard action once.
+        """
 
         current_time = time.time()
 
+        gesture = self.get_gesture_name(
+            fingers
+        )
+
+        # Only trigger when the gesture changes
+        if not self.is_new_gesture(gesture):
+            return
+
+        # Ignore unknown gestures
+        if gesture == "unknown":
+            return
+
+        # Cooldown protection
         if (
-            current_time - self.last_action_time
+            current_time
+            - self.last_action_time
             < self.action_cooldown
         ):
             return
 
-        action_performed = False
+        action = self.get_action(
+            hand_type,
+            gesture,
+        )
 
-        # LEFT HAND
-        if hand_type == "Left":
+        if action:
 
-            # Index + Middle → Left Arrow
-            if fingers == [0, 1, 1, 0, 0]:
-                pyautogui.press("left")
-                print("Left Arrow")
-                action_performed = True
+            action_performed = (
+                self.action_executor.execute(
+                    action
+                )
+            )
 
-            # Thumb → Space
-            elif fingers == [1, 0, 0, 0, 0]:
-                pyautogui.press("space")
-                print("Space")
-                action_performed = True
-
-            # Index → Alt + Tab
-            elif fingers == [0, 1, 0, 0, 0]:
-                pyautogui.hotkey("alt", "tab")
-                print("Alt + Tab")
-                action_performed = True
-
-        # RIGHT HAND
-        elif hand_type == "Right":
-
-            # Index + Middle → Right Arrow
-            if fingers == [0, 1, 1, 0, 0]:
-                pyautogui.press("right")
-                print("Right Arrow")
-                action_performed = True
-
-            # Thumb → Escape
-            elif fingers == [1, 0, 0, 0, 0]:
-                pyautogui.press("esc")
-                print("Escape")
-                action_performed = True
-
-            # Index → F5
-            elif fingers == [0, 1, 0, 0, 0]:
-                pyautogui.press("f5")
-                print("F5")
-                action_performed = True
-
-        if action_performed:
-            self.last_action_time = current_time
+            if action_performed:
+                self.last_action_time = current_time
 
     def run(self):
         """Run the gesture keyboard controller."""
@@ -100,21 +172,53 @@ class KeyboardController:
             success, frame = cap.read()
 
             if not success:
-                print("Error: Unable to read from camera.")
+                print(
+                    "Error: Unable to read from camera."
+                )
                 break
 
             # Mirror for natural interaction
-            frame = cv2.flip(frame, 1)
+            frame = cv2.flip(
+                frame,
+                1,
+            )
 
-            hands = self.hand_tracker.find_hands(frame)
+            hands = self.hand_tracker.find_hands(
+                frame
+            )
+
+            gesture_status = "NO HAND"
 
             if hands:
                 hand = hands[0]
 
                 hand_type = hand["type"]
 
-                fingers = self.hand_tracker.fingers_up(
-                    hand
+                fingers = (
+                    self.hand_tracker.fingers_up(
+                        hand
+                    )
+                )
+
+                gesture = self.get_gesture_name(
+                    fingers
+                )
+
+                action = self.get_action(
+                    hand_type,
+                    gesture,
+                )
+
+                gesture_label = self.get_gesture_label(
+                    gesture
+                )
+
+                action_label = self.get_action_label(
+                    action
+                )
+
+                gesture_status = (
+                    f"{gesture.upper()}"
                 )
 
                 self.perform_action(
@@ -122,14 +226,49 @@ class KeyboardController:
                     fingers,
                 )
 
-                # Display detected hand and gesture
+                # Display hand information
                 cv2.putText(
                     frame,
-                    f"{hand_type}: {fingers}",
+                    f"Hand: {hand_type}",
                     (20, 40),
                     cv2.FONT_HERSHEY_SIMPLEX,
-                    0.8,
+                    0.7,
                     (0, 255, 0),
+                    2,
+                )
+
+                cv2.putText(
+                    frame,
+                    f"Gesture: {gesture_label}",
+                    (20, 75),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    (0, 255, 0),
+                    2,
+                )
+
+                cv2.putText(
+                    frame,
+                    f"Action: {action_label}",
+                    (20, 110),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    (0, 255, 0),
+                    2,
+                )
+
+            else:
+                # Reset gesture state when hand disappears
+                self.current_gesture = None
+                self.previous_gesture = None
+
+                cv2.putText(
+                    frame,
+                    "NO HAND DETECTED",
+                    (20, 40),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    (0, 0, 255),
                     2,
                 )
 
